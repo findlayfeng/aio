@@ -37,6 +37,8 @@ services:
       - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD}
     labels:
           - traefik.http.routers.nextcloud.rule=Host(`${NEXTCLOUD_DOMAIN}`)
+          - traefik.http.routers.nextcloud.tls=true
+          - traefik.http.routers.nextcloud.tls.certresolver=acmeResolver
     depends_on:
       - db
       - redis
