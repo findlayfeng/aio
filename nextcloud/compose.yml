@@ -26,6 +26,7 @@ services:
     restart: always
     volumes:
       - data:/var/www/html
+      - ${NEXTCLOUD_TMP:-./tmp}:/mnt/tmp
     environment:
       - MYSQL_HOST=db
       - MYSQL_USER=nextcloud
