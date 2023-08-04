@@ -4,6 +4,11 @@ services:
   app:
     image: emmercm/qbittorrent
     restart: always
+    entrypoint:
+      - qbittorrent-nox
+    command:
+      - --webui-port=8080
+      - --torrenting-port=${LISTENPORT:-6881}
     environment:
       - TZ=${TZ:-America/New_York}
       - PING_IPS=${PING_IPS:-http://one.one.one.one}
