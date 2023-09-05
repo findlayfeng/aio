@@ -2,27 +2,25 @@ version: '3'
 
 services:
   app:
-    image: emmercm/qbittorrent
+    image: qbittorrentofficial/qbittorrent-nox
     restart: always
-    entrypoint:
-      - qbittorrent-nox
     command:
-      - --webui-port=8080
       - --torrenting-port=${LISTENPORT:-6881}
     environment:
       - TZ=${TZ:-America/New_York}
-      - PING_IPS=${PING_IPS:-http://one.one.one.one}
-      - IP_URL=${IP_URL:-http://whatismyip.akamai.com}
+      - QBT_EULA=${QBT_EULA:-}
+      - QBT_VERSION=${QBT_VERSION:-latest}
+      - QBT_WEBUI_PORT=${QBT_WEBUI_PORT:-8080}
     volumes:
-      - config:/config
-      - data:/data
-      - tmp:/incomplete
+      - config:/config/qBittorrent/config
+      - data:/config/qBittorrent/data
+      - tmp:/config/qBittorrent/cache
       - ${QBT_DOWNLOAD:-./downloads}:/downloads
     labels:
-          - traefik.http.routers.qbt.rule=Host(`${QBT_DOMAIN}`)
-          - traefik.http.routers.qbt.tls=${QBT_TLS:-true}
-          - traefik.http.routers.qbt.tls.certresolver=acmeResolver
-          - traefik.http.services.qbt-service.loadbalancer.server.port=8080
+      - traefik.http.routers.qbt.rule=Host(`${QBT_DOMAIN}`)
+      - traefik.http.routers.qbt.tls=${QBT_TLS:-true}
+      - traefik.http.routers.qbt.tls.certresolver=acmeResolver
+      - traefik.http.services.qbt-service.loadbalancer.server.port=${QBT_WEBUI_PORT:-8080}
     ports:
       - ${LISTENPORT:-6881}:${LISTENPORT:-6881}
       - ${LISTENPORT:-6881}:${LISTENPORT:-6881}/udp
