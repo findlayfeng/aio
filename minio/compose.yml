@@ -16,9 +16,11 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.routers.minio.rule=Host(`${MINIO_DOMAIN}`)
+      - traefik.http.routers.minio.entrypoints=${MINIO_ENTRYPOINTS:-}
       - traefik.http.routers.minio.service=minio-service
       - traefik.http.services.minio-service.loadbalancer.server.port=9000
       - traefik.http.routers.minio-console.rule=Host(`${MINIO_CONSOLE_DOMAIN}`)
+      - traefik.http.routers.minio-console.entrypoints=${MINIO_CONSOLE_ENTRYPOINTS:-}
       - traefik.http.routers.minio-console.service=minio-console-service
       - traefik.http.services.minio-console-service.loadbalancer.server.port=9090
     networks:

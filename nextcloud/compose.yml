@@ -30,6 +30,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.routers.onlyoffice.rule=Host(`${ONLYOFFICE_DOMAIN}`)
+      - traefik.http.routers.onlyoffice.entrypoints=${ONLYOFFICE_ENTRYPOINTS:-}
     networks:
       - proxy
 
