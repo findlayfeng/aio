@@ -15,13 +15,9 @@ services:
       - data:/data
     labels:
       - traefik.http.routers.minio.rule=Host(`${MINIO_DOMAIN}`)
-      - traefik.http.routers.minio.tls=${MINIO_TLS:-true}
-      - traefik.http.routers.minio.tls.certresolver=acmeResolver
       - traefik.http.routers.minio.service=minio-service
       - traefik.http.services.minio-service.loadbalancer.server.port=9000
       - traefik.http.routers.minio-console.rule=Host(`${MINIO_CONSOLE_DOMAIN}`)
-      - traefik.http.routers.minio-console.tls=${MINIO_CONSOLE_TLS:-true}
-      - traefik.http.routers.minio-console.tls.certresolver=acmeResolver
       - traefik.http.routers.minio-console.service=minio-console-service
       - traefik.http.services.minio-console-service.loadbalancer.server.port=9090
     networks:

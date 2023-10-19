@@ -29,8 +29,6 @@ services:
       - JWT_SECRET=${ONLYOFFICE_JWT_SECRET:-}
     labels:
       - traefik.http.routers.onlyoffice.rule=Host(`${ONLYOFFICE_DOMAIN}`)
-      - traefik.http.routers.onlyoffice.tls=${ONLYOFFICE_TLS:-true}
-      - traefik.http.routers.onlyoffice.tls.certresolver=acmeResolver
     networks:
       - proxy
 
@@ -58,8 +56,6 @@ services:
       - TRUSTED_PROXIES=${NEXTCLOUD_TRUSTED_PROXIES:-}
     labels:
           - traefik.http.routers.nextcloud.rule=Host(`${NEXTCLOUD_DOMAIN}`)
-          - traefik.http.routers.nextcloud.tls=${NEXTCLOUD_TLS:-true}
-          - traefik.http.routers.nextcloud.tls.certresolver=acmeResolver
           - traefik.http.routers.nextcloud.middlewares=nextcloudHeaders@docker,nextcloudReplacepathregex@docker
           - traefik.http.middlewares.nextcloudHeaders.headers.stsSeconds=15552000
           - traefik.http.middlewares.nextcloudReplacepathregex.replacepathregex.regex=^/.well-known/(caldav|carddav)

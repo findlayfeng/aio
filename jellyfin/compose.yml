@@ -10,8 +10,6 @@ services:
       - ${JELLYFIN_MEDIA:-./media}:/media
     labels:
           - traefik.http.routers.jellyfin.rule=Host(`${JELLYFIN_DOMAIN}`)
-          - traefik.http.routers.jellyfin.tls=${JELLYFIN_TLS:-true}
-          - traefik.http.routers.jellyfin.tls.certresolver=acmeResolver
           - traefik.http.services.jellyfin-service.loadbalancer.server.port=8096
     networks:
       - proxy
