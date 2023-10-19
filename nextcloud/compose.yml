@@ -58,6 +58,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.routers.nextcloud.rule=Host(`${NEXTCLOUD_DOMAIN}`)
+      - traefik.http.routers.nextcloud.entrypoints=${NEXTCLOUD_ENTRYPOINTS:-}
       - traefik.http.routers.nextcloud.middlewares=nextcloudHeaders@docker,nextcloudReplacepathregex@docker
       - traefik.http.middlewares.nextcloudHeaders.headers.stsSeconds=15552000
       - traefik.http.middlewares.nextcloudReplacepathregex.replacepathregex.regex=^/.well-known/(caldav|carddav)

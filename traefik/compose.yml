@@ -11,6 +11,7 @@ services:
     volumes:
       - ./traefik.yml:/etc/traefik/traefik.yml:ro
       - data:/data
+      - ./config:/config
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - proxy
