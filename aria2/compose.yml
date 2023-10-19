@@ -16,8 +16,9 @@ services:
       - config:/aria2/conf
       - ${ARIA2_DOWNLOAD:-./download}:/aria2/data
     labels:
-          - traefik.http.routers.aria2.rule=Host(`${ARIA2_DOMAIN}`)
-          - traefik.http.services.aria2-service.loadbalancer.server.port=8080
+      - traefik.enable=true
+      - traefik.http.routers.aria2.rule=Host(`${ARIA2_DOMAIN}`)
+      - traefik.http.services.aria2-service.loadbalancer.server.port=8080
     ports:
       - ${LISTENPORT:-51413}:${LISTENPORT:-51413}
       - ${LISTENPORT:-51413}:${LISTENPORT:-51413}/udp

@@ -28,6 +28,7 @@ services:
       - TZ=${TZ:-America/New_York}
       - JWT_SECRET=${ONLYOFFICE_JWT_SECRET:-}
     labels:
+      - traefik.enable=true
       - traefik.http.routers.onlyoffice.rule=Host(`${ONLYOFFICE_DOMAIN}`)
     networks:
       - proxy
@@ -55,11 +56,12 @@ services:
       - OVERWRITEPROTOCOL=${NEXTCLOUD_OVERWRITEPROTOCOL:-}
       - TRUSTED_PROXIES=${NEXTCLOUD_TRUSTED_PROXIES:-}
     labels:
-          - traefik.http.routers.nextcloud.rule=Host(`${NEXTCLOUD_DOMAIN}`)
-          - traefik.http.routers.nextcloud.middlewares=nextcloudHeaders@docker,nextcloudReplacepathregex@docker
-          - traefik.http.middlewares.nextcloudHeaders.headers.stsSeconds=15552000
-          - traefik.http.middlewares.nextcloudReplacepathregex.replacepathregex.regex=^/.well-known/(caldav|carddav)
-          - traefik.http.middlewares.nextcloudReplacepathregex.replacepathregex.replacement=/remote.php/dav
+      - traefik.enable=true
+      - traefik.http.routers.nextcloud.rule=Host(`${NEXTCLOUD_DOMAIN}`)
+      - traefik.http.routers.nextcloud.middlewares=nextcloudHeaders@docker,nextcloudReplacepathregex@docker
+      - traefik.http.middlewares.nextcloudHeaders.headers.stsSeconds=15552000
+      - traefik.http.middlewares.nextcloudReplacepathregex.replacepathregex.regex=^/.well-known/(caldav|carddav)
+      - traefik.http.middlewares.nextcloudReplacepathregex.replacepathregex.replacement=/remote.php/dav
     depends_on:
       - db
       - redis

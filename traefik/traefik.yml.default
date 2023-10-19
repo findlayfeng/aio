@@ -1,9 +1,14 @@
 providers:
   docker:
     network: proxy
+    exposedByDefault: false
 
 api:
   insecure: true
+
+entryPoints:
+  web:
+    address: ":80"
 
 certificatesResolvers:
   acmeResolver:
