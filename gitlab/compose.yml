@@ -8,7 +8,7 @@ services:
     environment:
       TZ: ${TZ:-America/New_York}
       GITLAB_OMNIBUS_CONFIG: |
-        external_url 'https://GITLAB_DOMAIN'
+        external_url 'https://${GITLAB_DOMAIN}'
         nginx['listen_port'] = 80
         nginx['listen_https'] = false
     shm_size: '256m'
