@@ -1,8 +1,8 @@
 version: '3'
 
 services:
-  app:
-    image: nyanmisaka/jellyfin
+  app: &base
+    build: ./images
     restart: always
     volumes:
       - cache:/cache
@@ -10,11 +10,24 @@ services:
       - ${JELLYFIN_MEDIA:-./media}:/media
     labels:
       - traefik.enable=true
-      - traefik.http.routers.jellyfin.rule=Host(`${JELLYFIN_DOMAIN}`)
-      - traefik.http.routers.jellyfin.entrypoints=${JELLYFIN_ENTRYPOINTS:-}
-      - traefik.http.services.jellyfin-service.loadbalancer.server.port=8096
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=Host(`${JELLYFIN_DOMAIN:-${COMPOSE_PROJECT_NAME}.${DOMAIN:-localhost}}`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=${JELLYFIN_ENTRYPOINTS:-}
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}-service.loadbalancer.server.port=8096
     networks:
       - proxy
+    profiles:
+      - ""
+
+  app-nvidia:
+    <<: *base
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    profiles:
+      - nvidia
 
 volumes:
   cache:

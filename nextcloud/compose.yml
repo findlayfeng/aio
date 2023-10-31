@@ -41,6 +41,8 @@ services:
       - traefik.http.routers.onlyoffice.entrypoints=${ONLYOFFICE_ENTRYPOINTS:-}
     networks:
       - proxy
+    profiles:
+      - onlyoffice
 
   app:
     build: ./images
