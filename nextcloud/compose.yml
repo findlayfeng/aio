@@ -8,8 +8,8 @@ services:
     ports:
       - 3306:3306
     environment:
-      - MYSQL_DATABASE=nextcloud
-      - MYSQL_USER=nextcloud
+      - MYSQL_DATABASE=${COMPOSE_PROJECT_NAME}
+      - MYSQL_USER=${COMPOSE_PROJECT_NAME}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
     volumes:
@@ -37,8 +37,8 @@ services:
       - JWT_SECRET=${ONLYOFFICE_JWT_SECRET:-}
     labels:
       - traefik.enable=true
-      - traefik.http.routers.onlyoffice.rule=Host(`${ONLYOFFICE_DOMAIN}`)
-      - traefik.http.routers.onlyoffice.entrypoints=${ONLYOFFICE_ENTRYPOINTS:-}
+      - traefik.http.routers.onlyoffice-${COMPOSE_PROJECT_NAME}.rule=Host(`${ONLYOFFICE_DOMAIN:-onlyoffice.${COMPOSE_PROJECT_NAME}.${DOMAIN:-localhost}}`)
+      - traefik.http.routers.onlyoffice-${COMPOSE_PROJECT_NAME}.entrypoints=${ONLYOFFICE_ENTRYPOINTS:-}
     networks:
       - proxy
     profiles:
@@ -53,27 +53,27 @@ services:
     environment:
       - TZ=${TZ:-America/New_York}
       - MYSQL_HOST=db
-      - MYSQL_USER=nextcloud
-      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=${NEXTCLOUD_DB_USER:-${COMPOSE_PROJECT_NAME}}
+      - MYSQL_DATABASE=${NEXTCLOUD_DB_DATABASE:-${COMPOSE_PROJECT_NAME}}
       - NEXTCLOUD_ADMIN_USER=admin
       - REDIS_HOST=redis
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-      - NEXTCLOUD_TRUSTED_DOMAINS=${NEXTCLOUD_DOMAIN}
+      - NEXTCLOUD_TRUSTED_DOMAINS=app ${NEXTCLOUD_DOMAIN:-${COMPOSE_PROJECT_NAME}.${DOMAIN:-localhost}}
       - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD}
-      - OVERWRITEHOST=${NEXTCLOUD_OVERWRITEHOST:-}
-      - OVERWRITECLIURL=${NEXTCLOUD_OVERWRITECLIURL:-}
+      - OVERWRITEHOST=${NEXTCLOUD_OVERWRITEHOST:-${NEXTCLOUD_DOMAIN:-${COMPOSE_PROJECT_NAME}.${DOMAIN:-localhost}}}
+      - OVERWRITECLIURL=${NEXTCLOUD_OVERWRITECLIURL:-${NEXTCLOUD_OVERWRITEPROTOCOL:-http}://${NEXTCLOUD_OVERWRITEHOST:-${NEXTCLOUD_DOMAIN:-${COMPOSE_PROJECT_NAME}.${DOMAIN:-localhost}}}}
       - OVERWRITEWEBROOT=${NEXTCLOUD_OVERWRITEWEBROOT:-}
       - OVERWRITECONDADDR=${NEXTCLOUD_OVERWRITECONDADDR:-}
-      - OVERWRITEPROTOCOL=${NEXTCLOUD_OVERWRITEPROTOCOL:-}
+      - OVERWRITEPROTOCOL=${NEXTCLOUD_OVERWRITEPROTOCOL:-http}
       - TRUSTED_PROXIES=${NEXTCLOUD_TRUSTED_PROXIES:-}
     labels:
       - traefik.enable=true
-      - traefik.http.routers.nextcloud.rule=Host(`${NEXTCLOUD_DOMAIN}`)
-      - traefik.http.routers.nextcloud.entrypoints=${NEXTCLOUD_ENTRYPOINTS:-}
-      - traefik.http.routers.nextcloud.middlewares=nextcloudHeaders@docker,nextcloudReplacepathregex@docker
-      - traefik.http.middlewares.nextcloudHeaders.headers.stsSeconds=15552000
-      - traefik.http.middlewares.nextcloudReplacepathregex.replacepathregex.regex=^/.well-known/(caldav|carddav)
-      - traefik.http.middlewares.nextcloudReplacepathregex.replacepathregex.replacement=/remote.php/dav
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=Host(`${NEXTCLOUD_DOMAIN:-${COMPOSE_PROJECT_NAME}.${DOMAIN:-localhost}}`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=${NEXTCLOUD_ENTRYPOINTS:-}
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.middlewares=${COMPOSE_PROJECT_NAME}Headers@docker,${COMPOSE_PROJECT_NAME}Replacepathregex@docker
+      - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}Headers.headers.stsSeconds=15552000
+      - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}Replacepathregex.replacepathregex.regex=^/.well-known/(caldav|carddav)
+      - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}Replacepathregex.replacepathregex.replacement=/remote.php/dav
     depends_on:
       - db
       - redis
