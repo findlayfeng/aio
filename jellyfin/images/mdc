@@ -1,0 +1,12 @@
+#! /bin/bash
+
+CONFIG_FILE="${HOME}/mdc.ini"
+
+INSTALL_PREFIX="${INSTALL_PREFIX:-/usr/local}"
+MDC_DIR="${INSTALL_PREFIX}/share/mdc"
+
+if [ ! -f "${CONFIG_FILE}" ]; then
+    install ${MDC_DIR}/config.template "${CONFIG_FILE}"
+fi
+
+exec ${MDC_DIR}/Movie_Data_Capture $@
