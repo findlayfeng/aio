@@ -7,7 +7,7 @@ services:
     command:
       - --torrenting-port=${LISTENPORT:-6881}
     environment:
-      - TZ=${TZ:-America/New_York}
+      - TZ=${TZ:-UTC}
       - QBT_EULA=${QBT_EULA:-}
       - QBT_VERSION=${QBT_VERSION:-latest}
       - QBT_WEBUI_PORT=${QBT_WEBUI_PORT:-8080}

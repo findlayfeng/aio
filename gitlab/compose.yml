@@ -6,7 +6,7 @@ services:
     restart: always
     hostname: "${GITLAB_DOMAIN}"
     environment:
-      TZ: ${TZ:-America/New_York}
+      TZ: ${UTC}
       GITLAB_OMNIBUS_CONFIG: |
         external_url '${GITLAB_PROTOCOL:-http}://${GITLAB_DOMAIN}'
         nginx['listen_port'] = 80

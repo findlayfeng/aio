@@ -5,7 +5,7 @@ services:
     image: gitlab/gitlab-runner
     restart: always
     environment:
-      - TZ=${TZ:-America/New_York}
+      - TZ=${TZ:-UTC}
     volumes:
       - ${CAFILE:-/etc/ssl/ca-bundle.pem}:/etc/gitlab-runner/certs/ca.crt:ro
       - /var/run/docker.sock:/var/run/docker.sock

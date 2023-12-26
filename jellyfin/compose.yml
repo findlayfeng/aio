@@ -21,7 +21,6 @@ services:
   app-nvidia:
     <<: *base
     container_name: app
-    runtime: nvidia
     deploy:
       resources:
         reservations:

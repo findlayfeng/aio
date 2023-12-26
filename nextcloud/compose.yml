@@ -33,7 +33,7 @@ services:
         echo 'done! starting server...'
         /app/ds/run-document-server.sh
     environment:
-      - TZ=${TZ:-America/New_York}
+      - TZ=${TZ:-UTC}
       - JWT_SECRET=${ONLYOFFICE_JWT_SECRET:-}
     labels:
       - traefik.enable=true
@@ -51,7 +51,7 @@ services:
       - data:/var/www/html
       - ${NEXTCLOUD_TMP:-./tmp}:/mnt/tmp
     environment:
-      - TZ=${TZ:-America/New_York}
+      - TZ=${TZ:-UTC}
       - MYSQL_HOST=db
       - MYSQL_USER=${NEXTCLOUD_DB_USER:-${COMPOSE_PROJECT_NAME}}
       - MYSQL_DATABASE=${NEXTCLOUD_DB_DATABASE:-${COMPOSE_PROJECT_NAME}}
