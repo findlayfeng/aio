@@ -38,14 +38,35 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.routers.onlyoffice-${COMPOSE_PROJECT_NAME}.rule=Host(`${ONLYOFFICE_DOMAIN:-onlyoffice.${COMPOSE_PROJECT_NAME}.${DOMAIN:-localhost}}`)
-      - traefik.http.routers.onlyoffice-${COMPOSE_PROJECT_NAME}.entrypoints=${ONLYOFFICE_ENTRYPOINTS:-}
+      - traefik.http.routers.onlyoffice-${COMPOSE_PROJECT_NAME}.entrypoints=${ONLYOFFICE_ENTRYPOINTS:-${ENTRYPOINTS:-web}}
     networks:
       - proxy
     profiles:
       - onlyoffice
 
+  collabora:
+    image: collabora/code
+    restart: always
+    environment:
+      - TZ=${TZ:-UTC}
+      - extra_params=--o:ssl.enable=false
+      - DONT_GEN_SSL_CERT=true
+      - dictionaries="zh_CN en_GB en_US es_ES"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.collabora-${COMPOSE_PROJECT_NAME}.rule=Host(`${COLLABORA_DOMAIN:-collabora.${COMPOSE_PROJECT_NAME}.${DOMAIN:-localhost}}`)
+      - traefik.http.routers.collabora-${COMPOSE_PROJECT_NAME}.entrypoints=${COLLABORA_ENTRYPOINTS:-${ENTRYPOINTS:-web}}
+      - traefik.http.services.collabora-${COMPOSE_PROJECT_NAME}-service.loadbalancer.server.port=9980
+    networks:
+      - proxy
+    profiles:
+      - collabora
+
   app:
-    build: ./images
+    build:
+      context: ./images
+      args:
+        MIRROR: "${MIRROR}"
     restart: always
     volumes:
       - data:/var/www/html
@@ -69,7 +90,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=Host(`${NEXTCLOUD_DOMAIN:-${COMPOSE_PROJECT_NAME}.${DOMAIN:-localhost}}`)
-      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=${NEXTCLOUD_ENTRYPOINTS:-}
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=${NEXTCLOUD_ENTRYPOINTS:-${ENTRYPOINTS:-web}}
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}.middlewares=${COMPOSE_PROJECT_NAME}Headers@docker,${COMPOSE_PROJECT_NAME}Replacepathregex@docker
       - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}Headers.headers.stsSeconds=15552000
       - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}Replacepathregex.replacepathregex.regex=^/.well-known/(caldav|carddav)

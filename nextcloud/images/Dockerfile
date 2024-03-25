@@ -1,9 +1,17 @@
 FROM nextcloud:production-apache
 
-RUN sed -e 's|deb\.debian\.org|opentuna.cn|g' \
-        -e 's|security\.debian\.org|opentuna.cn|g' \
-        -e 's|http://opentuna\.cn|https://opentuna.cn|g' \
-      -i.bak \
+ARG MIRROR=
+ARG SECURITY_MIRROR=${MIRROR}
+RUN [ -z "${MIRROR}" ] || \
+    sed -e "s|deb\.debian\.org|${MIRROR}|g" \
+      -i \
+      $([ -e "/etc/apt/sources.list.d/debian.sources" ] && \
+        echo -n /etc/apt/sources.list.d/debian.sources || \
+        echo -n /etc/apt/sources.list)
+
+RUN [ -z "${SECURITY_MIRROR}" ] || \
+    sed -e "s|security\.debian\.org|${SECURITY_MIRROR}|g" \
+      -i \
       $([ -e "/etc/apt/sources.list.d/debian.sources" ] && \
         echo -n /etc/apt/sources.list.d/debian.sources || \
         echo -n /etc/apt/sources.list)
