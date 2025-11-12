@@ -1,25 +1,33 @@
-FROM nextcloud:production-apache
+FROM nextcloud:31.0.4-apache
 
 ARG MIRROR=
-ARG SECURITY_MIRROR=${MIRROR}
-RUN [ -z "${MIRROR}" ] || \
-    sed -e "s|deb\.debian\.org|${MIRROR}|g" \
+ARG DEBIAN_MIRROR=${MIRROR:+${MIRROR}/debian}
+ARG DEBIAN_SECURITY_MIRROR=${MIRROR:+${MIRROR}/debian-security}
+
+RUN [ -z "${DEBIAN_MIRROR}" ] || \
+    sed -e "s|https\?://deb\.debian\.org/debian\$|${DEBIAN_MIRROR}|g" \
       -i \
       $([ -e "/etc/apt/sources.list.d/debian.sources" ] && \
         echo -n /etc/apt/sources.list.d/debian.sources || \
         echo -n /etc/apt/sources.list)
 
-RUN [ -z "${SECURITY_MIRROR}" ] || \
-    sed -e "s|security\.debian\.org|${SECURITY_MIRROR}|g" \
+RUN [ -z "${DEBIAN_SECURITY_MIRROR}" ] || \
+    sed -E -e "s|https?://(security\|deb)\.debian\.org/debian-security\$|${DEBIAN_SECURITY_MIRROR}|g" \
       -i \
       $([ -e "/etc/apt/sources.list.d/debian.sources" ] && \
         echo -n /etc/apt/sources.list.d/debian.sources || \
         echo -n /etc/apt/sources.list)
 
-RUN set -ex; \
-    \
+RUN --mount=type=cache,target=/var/cache/apt \
+    --mount=type=cache,target=/var/lib/apt/lists/ \
+    set -ex; \
+    DEBIAN_VERSION=$(cat /etc/debian_version); \
+    curl -o /tmp/cuda-keyring_1.1-1_all.deb \
+        https://developer.download.nvidia.com/compute/cuda/repos/debian${DEBIAN_VERSION%%.*}/$(arch)/cuda-keyring_1.1-1_all.deb; \
+    dpkg -i /tmp/cuda-keyring_1.1-1_all.deb; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
+        nodejs \
         aria2 \
         youtube-dl \
         ffmpeg \
@@ -27,10 +35,13 @@ RUN set -ex; \
         procps \
         smbclient \
         supervisor \
-    ; \
-    rm -rf /var/lib/apt/lists/*
+        cuda-toolkit \
+        libcudnn9-cuda-12 \
+    ;
 
-RUN set -ex; \
+RUN --mount=type=cache,target=/var/cache/apt \
+    --mount=type=cache,target=/var/lib/apt/lists/ \
+    set -ex; \
     \
     savedAptMark="$(apt-mark showmanual)"; \
     \
@@ -39,7 +50,7 @@ RUN set -ex; \
         libbz2-dev \
         libc-client-dev \
         libkrb5-dev \
-        libsmbclient-dev \
+#        libsmbclient-dev \
     ; \
     \
     docker-php-ext-configure imap --with-kerberos --with-imap-ssl; \
@@ -47,8 +58,8 @@ RUN set -ex; \
         bz2 \
         imap \
     ; \
-    pecl install smbclient; \
-    docker-php-ext-enable smbclient; \
+#    pecl install smbclient; \
+#    docker-php-ext-enable smbclient; \
     \
 # reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
     apt-mark auto '.*' > /dev/null; \

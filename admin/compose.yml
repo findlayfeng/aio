@@ -1,0 +1,29 @@
+services:
+  db:
+    image: mariadb:11
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    restart: always
+    environment:
+      - MARIADB_AUTO_UPGRADE=1
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - db:/var/lib/mysql
+  
+  nc_db:
+    image: mariadb:10.11
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    restart: always
+    environment:
+      - MARIADB_AUTO_UPGRADE=1
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - nc_db:/var/lib/mysql
+
+  redis:
+    image: redis:alpine
+    restart: always
+
+volumes:
+  db:
+  nc_db:
+

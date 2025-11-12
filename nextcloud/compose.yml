@@ -1,82 +1,37 @@
-version: '3'
-
 services:
-  db:
-    image: mariadb:10.5
-    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
-    restart: always
-    ports:
-      - 3306:3306
-    environment:
-      - MYSQL_DATABASE=${COMPOSE_PROJECT_NAME}
-      - MYSQL_USER=${COMPOSE_PROJECT_NAME}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-    volumes:
-      - db:/var/lib/mysql
-
-  redis:
-    image: redis:alpine
-    ports:
-      - 6379:6379
-    restart: always
-
-  onlyoffice:
-    image: onlyoffice/documentserver
-    restart: always
-    entrypoint:
-      - "sh"
-      - "-c"
-      - |
-        echo 'patching https://github.com/ONLYOFFICE/DocumentServer/issues/2186...'
-        find /var/www/onlyoffice/documentserver -name sdk-all-min.js -exec sed -E -i 's|(function +\w+\(\w+\) *\{ *function +\w+\(\)) *\{ *(\w+)\.open\((\w+),(\w+),(\w+)\);|\1{\nif (\4 \&\& \4.length > 5) {if (\4.substring(0, 5) == "http:") {\4 = \4.replace("http://", "https://");}};\n\2.open(\3,\4,\5);\n|' '{}' ';'
-        echo 'done! starting server...'
-        /app/ds/run-document-server.sh
-    environment:
-      - TZ=${TZ:-UTC}
-      - JWT_SECRET=${ONLYOFFICE_JWT_SECRET:-}
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.onlyoffice-${COMPOSE_PROJECT_NAME}.rule=Host(`${ONLYOFFICE_DOMAIN:-onlyoffice.${COMPOSE_PROJECT_NAME}.${DOMAIN:-localhost}}`)
-      - traefik.http.routers.onlyoffice-${COMPOSE_PROJECT_NAME}.entrypoints=${ONLYOFFICE_ENTRYPOINTS:-${ENTRYPOINTS:-web}}
-    networks:
-      - proxy
-    profiles:
-      - onlyoffice
-
-  collabora:
+  code:
     image: collabora/code
     restart: always
     environment:
-      - TZ=${TZ:-UTC}
-      - extra_params=--o:ssl.enable=false
-      - DONT_GEN_SSL_CERT=true
-      - dictionaries="zh_CN en_GB en_US es_ES"
+      DONT_GEN_SSL_CERT: 1
+      username: fengch
+      password: 3u6cboo5kiCD
+      extra_params: --o:ssl.enable=false --o:ssl.termination=true --o:remote_font_config.url=https://nextcloud.fengch.me:8443/apps/richdocuments/settings/fonts.json
     labels:
       - traefik.enable=true
-      - traefik.http.routers.collabora-${COMPOSE_PROJECT_NAME}.rule=Host(`${COLLABORA_DOMAIN:-collabora.${COMPOSE_PROJECT_NAME}.${DOMAIN:-localhost}}`)
-      - traefik.http.routers.collabora-${COMPOSE_PROJECT_NAME}.entrypoints=${COLLABORA_ENTRYPOINTS:-${ENTRYPOINTS:-web}}
-      - traefik.http.services.collabora-${COMPOSE_PROJECT_NAME}-service.loadbalancer.server.port=9980
+      - traefik.http.routers.code.rule=Host(`${CODE_DOMAIN:-code.${DOMAIN:-localhost}}`)
+      - traefik.http.routers.code.entrypoints=${CODE_ENTRYPOINTS:-}
+      - traefik.http.services.code-service.loadbalancer.server.port=9980
     networks:
       - proxy
-    profiles:
-      - collabora
 
   app:
     build:
       context: ./images
       args:
-        MIRROR: "${MIRROR}"
+        MIRROR: "https://mirrors.ustc.edu.cn"
     restart: always
-    volumes:
+    volumes: &app_volumes
+      - type: tmpfs
+        target: /tmp:exec
       - data:/var/www/html
-      - ${NEXTCLOUD_TMP:-./tmp}:/mnt/tmp
     environment:
       - TZ=${TZ:-UTC}
       - MYSQL_HOST=db
       - MYSQL_USER=${NEXTCLOUD_DB_USER:-${COMPOSE_PROJECT_NAME}}
       - MYSQL_DATABASE=${NEXTCLOUD_DB_DATABASE:-${COMPOSE_PROJECT_NAME}}
       - NEXTCLOUD_ADMIN_USER=admin
+      - PHP_MEMORY_LIMIT=2G
       - REDIS_HOST=redis
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - NEXTCLOUD_TRUSTED_DOMAINS=app ${NEXTCLOUD_DOMAIN:-${COMPOSE_PROJECT_NAME}.${DOMAIN:-localhost}}
@@ -91,21 +46,52 @@ services:
       - traefik.enable=true
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=Host(`${NEXTCLOUD_DOMAIN:-${COMPOSE_PROJECT_NAME}.${DOMAIN:-localhost}}`)
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=${NEXTCLOUD_ENTRYPOINTS:-${ENTRYPOINTS:-web}}
-      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.middlewares=${COMPOSE_PROJECT_NAME}Headers@docker,${COMPOSE_PROJECT_NAME}Replacepathregex@docker
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.middlewares=${COMPOSE_PROJECT_NAME}Headers@docker
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}Wellknown.rule=Host(`${NEXTCLOUD_DOMAIN:-${COMPOSE_PROJECT_NAME}.${DOMAIN:-localhost}}`) && PathPrefix(`/.well-known/caldav`, `/.well-known/carddav`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}Wellknown.entrypoints=${NEXTCLOUD_ENTRYPOINTS:-${ENTRYPOINTS:-web}}
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}Wellknown.middlewares=${COMPOSE_PROJECT_NAME}Headers@docker,${COMPOSE_PROJECT_NAME}Redirectregex0@docker
       - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}Headers.headers.stsSeconds=15552000
-      - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}Replacepathregex.replacepathregex.regex=^/.well-known/(caldav|carddav)
-      - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}Replacepathregex.replacepathregex.replacement=/remote.php/dav
-    depends_on:
-      - db
-      - redis
+      - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}Redirectregex0.redirectregex.regex=^(.*)/\.well-known/(?:card|cal)dav
+      - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}Redirectregex0.redirectregex.replacement=$${1}/remote.php/dav
+      - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}Redirectregex0.redirectregex.permanent=true
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     networks:
-      - proxy
       - default
+      - admin_default
+      - proxy
+
+  go-vod:
+    image: radialapps/go-vod
+    restart: always
+    init: true
+    depends_on:
+      - app
+    environment:
+      - NEXTCLOUD_HOST=${NEXTCLOUD_OVERWRITECLIURL:-${NEXTCLOUD_OVERWRITEPROTOCOL:-http}://${NEXTCLOUD_OVERWRITEHOST:-${NEXTCLOUD_DOMAIN:-${COMPOSE_PROJECT_NAME}.${DOMAIN:-localhost}}}}
+      - NVIDIA_VISIBLE_DEVICES=all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - type: tmpfs
+        target: /tmp:exec
+      - data:/var/www/html:ro
 
 volumes:
   data:
-  db:
 
 networks:
   proxy:
+    external: true
+  admin_default:
     external: true

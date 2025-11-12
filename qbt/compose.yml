@@ -1,21 +1,25 @@
-version: '3'
-
 services:
   app:
     image: qbittorrentofficial/qbittorrent-nox
+    # image: qbittorrent-enhanced-edition-nox
+    # build:
+    #   context: https://github.com/findlayfeng/docker-qbittorrent-enhanced-edition-nox.git
+    #   args:
+    #     QBTEX_VERSION: "devel"
     restart: always
     command:
       - --torrenting-port=${LISTENPORT:-6881}
     environment:
       - TZ=${TZ:-UTC}
+      - PUID=33
+      - PGID=33
       - QBT_EULA=${QBT_EULA:-}
-      - QBT_VERSION=${QBT_VERSION:-latest}
+      # - QBT_VERSION=${QBT_VERSION:-latest}
       - QBT_WEBUI_PORT=${QBT_WEBUI_PORT:-8080}
     volumes:
       - config:/config/qBittorrent/config
       - data:/config/qBittorrent/data
-      - tmp:/config/qBittorrent/cache
-      - ${QBT_DOWNLOAD:-./downloads}:/downloads
+      - /mnt/data:/downloads
     labels:
       - traefik.enable=true
       - traefik.http.routers.qbt.rule=Host(`${QBT_DOMAIN}`)
@@ -29,7 +33,6 @@ services:
 volumes:
   config:
   data:
-  tmp:
 
 networks:
   proxy:

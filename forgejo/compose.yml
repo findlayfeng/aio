@@ -1,0 +1,31 @@
+services:
+  forgejo:
+    image: codeberg.org/forgejo/forgejo:9
+    container_name: forgejo
+    environment:
+      - USER_UID=33
+      - USER_GID=33
+    restart: always
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=Host(`${FORGEJO_DOMAIN:-${COMPOSE_PROJECT_NAME}.${DOMAIN:-localhost}}`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=${FORGEJO_ENTRYPOINTS:-websecure}
+      - traefik.http.services.${COMPOSE_PROJECT_NAME}-service.loadbalancer.server.port=3000
+    networks:
+      - admin_default
+      - proxy
+    volumes:
+      - data:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - '8022:22'
+
+volumes:
+  data:
+
+networks:
+  proxy:
+    external: true
+  admin_default:
+    external: true

@@ -1,17 +1,22 @@
-version: '3'
-
 services:
   app: &base
     build: ./images
     restart: always
     volumes:
-      - cache:/cache
       - config:/config
-      - ${JELLYFIN_MEDIA:-./media}:/media
+      - /mnt/data/download:/media/download
+      - /mnt/data/tmp/jellyfin:/cache
+      - ./fonts:/fonts
+      - type: tmpfs
+        target: /tmp:exec
+    user: 33:33
+    environment:
+      - TZ=Asia/Shanghai
     labels:
       - traefik.enable=true
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=Host(`${JELLYFIN_DOMAIN:-${COMPOSE_PROJECT_NAME}.${DOMAIN:-localhost}}`)
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=${JELLYFIN_ENTRYPOINTS:-}
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls.certresolver=zerossl
       - traefik.http.services.${COMPOSE_PROJECT_NAME}-service.loadbalancer.server.port=8096
     networks:
       - proxy
@@ -21,16 +26,18 @@ services:
   app-nvidia:
     <<: *base
     container_name: app
+    runtime: nvidia
     deploy:
       resources:
         reservations:
           devices:
-            - capabilities: [gpu]
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     profiles:
       - nvidia
 
 volumes:
-  cache:
   config:
 
 networks:
