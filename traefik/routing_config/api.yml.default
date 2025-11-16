@@ -1,0 +1,12 @@
+http:
+  routers:
+    dashboard:
+      service: api@internal
+      rule: Host(`traefik.localhost`)
+      middlewares: auth
+  middlewares:
+    auth:
+      basicAuth:
+        users:
+          # admin c4YFZgU6C8qopTIx
+          - admin:$2y$05$ruZIm4.ITOK7okYBj.TJwOEk6jbJcijfaBPT4AWPaps/JVCv6/onq

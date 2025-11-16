@@ -1,32 +1,25 @@
 services:
-  app: &base
-    build: ./images
+  app:
+    build:
+      context: ./images
+      args:
+        MIRROR: "https://mirrors.ustc.edu.cn"
     restart: always
     volumes:
       - config:/config
-      - /mnt/data/download:/media/download
-      - /mnt/data/tmp/jellyfin:/cache
-      - ./fonts:/fonts
-      - type: tmpfs
-        target: /tmp:exec
+      - ${DATA_PATH:-../data}/download:/media/download:ro
+      - ${DATA_PATH:-../data}/tmp/jellyfin:/cache
+      - ./fonts:/fonts:ro
     user: 33:33
     environment:
-      - TZ=Asia/Shanghai
+      - TZ=${TZ:-UTC}
     labels:
       - traefik.enable=true
-      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=Host(`${JELLYFIN_DOMAIN:-${COMPOSE_PROJECT_NAME}.${DOMAIN:-localhost}}`)
-      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=${JELLYFIN_ENTRYPOINTS:-}
-      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls.certresolver=zerossl
-      - traefik.http.services.${COMPOSE_PROJECT_NAME}-service.loadbalancer.server.port=8096
+      - name=jellyfin
+      - traefik.http.services.app-${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=8096
+      # - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls.certresolver=zerossl
     networks:
       - proxy
-    profiles:
-      - ""
-
-  app-nvidia:
-    <<: *base
-    container_name: app
-    runtime: nvidia
     deploy:
       resources:
         reservations:
@@ -34,8 +27,10 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
-    profiles:
-      - nvidia
+    post_start:
+      - command: chown -R 33:33 /config /cache
+        user: root
+
 
 volumes:
   config:

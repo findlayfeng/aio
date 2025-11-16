@@ -1,23 +1,19 @@
 services:
   db:
-    image: mariadb:11
+    image: mariadb:11.8
     command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
     restart: always
     environment:
+      - TZ=${TZ:-UTC}
       - MARIADB_AUTO_UPGRADE=1
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD:-}
+      - MARIADB_RANDOM_ROOT_PASSWORD=${MARIADB_RANDOM_ROOT_PASSWORD:-}
+      - MARIADB_DATABASE=${MARIADB_DATABASE:-aio}
+      - MARIADB_USER=${MARIADB_USER:-${MARIADB_DATABASE:-aio}}
+      - MARIADB_PASSWORD=${MARIADB_PASSWORD:-}
+
     volumes:
       - db:/var/lib/mysql
-  
-  nc_db:
-    image: mariadb:10.11
-    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
-    restart: always
-    environment:
-      - MARIADB_AUTO_UPGRADE=1
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-    volumes:
-      - nc_db:/var/lib/mysql
 
   redis:
     image: redis:alpine
@@ -25,5 +21,9 @@ services:
 
 volumes:
   db:
-  nc_db:
 
+networks:
+  default:
+    internal: true
+    driver: bridge
+    name: internal

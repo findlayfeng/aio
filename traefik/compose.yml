@@ -1,15 +1,49 @@
 services:
   reverse-proxy:
-    image: traefik:v2.11
+    image: traefik:v3
     restart: always
     volumes:
-      - ./traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./config:/etc/traefik:ro
+      - ./routing_config:/routing_config
       - data:/data
-      - ./config:/config
       - /var/run/docker.sock:/var/run/docker.sock
-    network_mode: "host"
+    ports:
+      - ${TRAEFIK_WEB_PORT:-8080}:${TRAEFIK_WEB_PORT:-8080}
+      - ${TRAEFIK_WEBSECURE_PORT:-8443}:${TRAEFIK_WEBSECURE_PORT:-8443}
+    environment:
+      - TZ=${TZ:-UTC}
+      - TRAEFIK_PROVIDERS_DOCKER=true
+      - TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT=false
+      - TRAEFIK_ENTRYPOINTS_WEB_ADDRESS=:${TRAEFIK_WEB_PORT:-8080}
+      - TRAEFIK_ENTRYPOINTS_WEBSECURE_ADDRESS=:${TRAEFIK_WEBSECURE_PORT:-8443}
+      - TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS_ENTRYPOINT_TO=websecure
+      - TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS_ENTRYPOINT_SCHEME=https
+      - TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS_ENTRYPOINT_PERMANENT=true
+      - TRAEFIK_ENTRYPOINTS_WEBSECURE_ASDEFAULT=true
+      - TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_TLS=true
+      - TRAEFIK_PROVIDERS_DOCKER_NETWORK=proxy
+      - TRAEFIK_PROVIDERS_FILE=true
+      - TRAEFIK_PROVIDERS_FILE_DIRECTORY=/routing_config
+      - TRAEFIK_PROVIDERS_FILE_WATCH=true
+      - TRAEFIK_PROVIDERS_DOCKER_DEFAULTRULE=Host(`{{ or (index .Labels "domain") (printf "%s.%s" (or (index .Labels "name") (index .Labels "com.docker.compose.service") .Name) "${DOMAIN:-localhost}")}}`)
+
+    networks:
+      default:
+      proxy:
+        ipv4_address: 169.254.1.254
+
     env_file:
       - traefik.env
 
+networks:
+  proxy:
+    name: proxy
+    driver: bridge
+    internal: true
+    ipam:
+      driver: default
+      config:
+        - subnet: 169.254.1.0/24
+          ip_range: 169.254.1.0/24
 volumes:
   data:

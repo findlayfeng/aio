@@ -1,3 +1,4 @@
-*.env
-traefik/traefik.yml
-traefik/config/*
+.env
+*.code-workspace
+!/*/**/.env
+/data/

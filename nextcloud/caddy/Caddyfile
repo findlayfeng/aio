@@ -1,0 +1,35 @@
+{
+    local_certs
+	servers {
+		trusted_proxies static 169.254.1.254/32
+	}
+}
+
+(nextcloud) {
+    @well-known path_regexp ^/.well-known/(?:card|cal)dav$
+    redir @well-known /remote.php/dav/ 301
+
+    reverse_proxy /exapps/* appapi-harp:8780
+    root * /var/www/html
+
+    php_fastcgi app:9000
+    file_server
+}
+
+
+nextcloud {
+    import nextcloud
+    header Strict-Transport-Security "max-age=15552000;includeSubDomains;preload"
+}
+
+{$HTTP_INGRES} {
+    import nextcloud
+}
+
+{$HTTPS_INGRES} {
+    import nextcloud
+    header Strict-Transport-Security "max-age=15552000;includeSubDomains;preload"
+}
+
+# Refer to the Caddy docs for more information:
+# https://caddyserver.com/docs/caddyfile

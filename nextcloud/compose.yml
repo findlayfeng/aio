@@ -2,96 +2,180 @@ services:
   code:
     image: collabora/code
     restart: always
+    cap_add:
+      - SYS_ADMIN
     environment:
       DONT_GEN_SSL_CERT: 1
-      username: fengch
-      password: 3u6cboo5kiCD
-      extra_params: --o:ssl.enable=false --o:ssl.termination=true --o:remote_font_config.url=https://nextcloud.fengch.me:8443/apps/richdocuments/settings/fonts.json
+      username: ${CODE_USERNAME:-admin}
+      password: ${CODE_PASSWORD:-}
+      server_name: code.${DOMAIN:-localhost}:${TRAEFIK_WEBSECURE_PORT:-8443}
+      aliasgroup1: http://nextcloud.${DOMAIN:-localhost}:${TRAEFIK_WEB_PORT:-8080},https://nextcloud.${DOMAIN:-localhost}:${TRAEFIK_WEBSECURE_PORT:-8443}
+      extra_params: |-
+        --o:ssl.enable=false
+        --o:ssl.termination=true
+        --o:remote_font_config.url=https://nextcloud.${DOMAIN:-localhost}:${TRAEFIK_WEBSECURE_PORT:-8443}/apps/richdocuments/settings/fonts.json
     labels:
       - traefik.enable=true
-      - traefik.http.routers.code.rule=Host(`${CODE_DOMAIN:-code.${DOMAIN:-localhost}}`)
-      - traefik.http.routers.code.entrypoints=${CODE_ENTRYPOINTS:-}
-      - traefik.http.services.code-service.loadbalancer.server.port=9980
     networks:
-      - proxy
+      default:
+        ipv4_address: 169.254.3.253
+      proxy:
+    volumes:
+      - type: volume
+        source: caddy_data
+        volume:
+          subpath: pki/authorities/local/root.crt
+        target: /usr/local/share/ca-certificates/self.crt
+        read_only: true
+    post_start:
+      - command: update-ca-certificates
+        user: root
+    depends_on:
+      - caddy
 
-  app:
+  app: &app
     build:
       context: ./images
       args:
         MIRROR: "https://mirrors.ustc.edu.cn"
     restart: always
-    volumes: &app_volumes
-      - type: tmpfs
-        target: /tmp:exec
-      - data:/var/www/html
+    depends_on:
+      - caddy
+    volumes:
+      - ./skeleton:/var/www/skeleton
+      - html:/var/www/html
+      - data:/var/www/data
+      - type: volume
+        source: caddy_data
+        volume:
+          subpath: pki/authorities/local/root.crt
+        target: /usr/local/share/ca-certificates/self.crt
+        read_only: true
+    post_start:
+      - command: update-ca-certificates
+        user: root
     environment:
       - TZ=${TZ:-UTC}
-      - MYSQL_HOST=db
-      - MYSQL_USER=${NEXTCLOUD_DB_USER:-${COMPOSE_PROJECT_NAME}}
-      - MYSQL_DATABASE=${NEXTCLOUD_DB_DATABASE:-${COMPOSE_PROJECT_NAME}}
-      - NEXTCLOUD_ADMIN_USER=admin
-      - PHP_MEMORY_LIMIT=2G
+
+      - TRUSTED_PROXIES=169.254.1.254 169.254.3.254
+      - OVERWRITEPROTOCOL=https
       - REDIS_HOST=redis
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-      - NEXTCLOUD_TRUSTED_DOMAINS=app ${NEXTCLOUD_DOMAIN:-${COMPOSE_PROJECT_NAME}.${DOMAIN:-localhost}}
-      - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD}
-      - OVERWRITEHOST=${NEXTCLOUD_OVERWRITEHOST:-${NEXTCLOUD_DOMAIN:-${COMPOSE_PROJECT_NAME}.${DOMAIN:-localhost}}}
-      - OVERWRITECLIURL=${NEXTCLOUD_OVERWRITECLIURL:-${NEXTCLOUD_OVERWRITEPROTOCOL:-http}://${NEXTCLOUD_OVERWRITEHOST:-${NEXTCLOUD_DOMAIN:-${COMPOSE_PROJECT_NAME}.${DOMAIN:-localhost}}}}
+      - MYSQL_HOST=db
+      - NEXTCLOUD_DATA_DIR=/var/www/data
+
+      - NEXTCLOUD_ADMIN_USER=${NEXTCLOUD_ADMIN_USER:-admin}
+      - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD:-}
+      - NEXTCLOUD_TRUSTED_DOMAINS=nextcloud nextcloud.${DOMAIN:-localhost}
+
+      - OVERWRITEHOST=nextcloud.${DOMAIN:-localhost}:${TRAEFIK_WEBSECURE_PORT:-8443}
+      - OVERWRITECLIURL=https://nextcloud.${DOMAIN:-localhost}:${TRAEFIK_WEBSECURE_PORT:-8443}
       - OVERWRITEWEBROOT=${NEXTCLOUD_OVERWRITEWEBROOT:-}
       - OVERWRITECONDADDR=${NEXTCLOUD_OVERWRITECONDADDR:-}
-      - OVERWRITEPROTOCOL=${NEXTCLOUD_OVERWRITEPROTOCOL:-http}
-      - TRUSTED_PROXIES=${NEXTCLOUD_TRUSTED_PROXIES:-}
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=Host(`${NEXTCLOUD_DOMAIN:-${COMPOSE_PROJECT_NAME}.${DOMAIN:-localhost}}`)
-      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=${NEXTCLOUD_ENTRYPOINTS:-${ENTRYPOINTS:-web}}
-      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.middlewares=${COMPOSE_PROJECT_NAME}Headers@docker
-      - traefik.http.routers.${COMPOSE_PROJECT_NAME}Wellknown.rule=Host(`${NEXTCLOUD_DOMAIN:-${COMPOSE_PROJECT_NAME}.${DOMAIN:-localhost}}`) && PathPrefix(`/.well-known/caldav`, `/.well-known/carddav`)
-      - traefik.http.routers.${COMPOSE_PROJECT_NAME}Wellknown.entrypoints=${NEXTCLOUD_ENTRYPOINTS:-${ENTRYPOINTS:-web}}
-      - traefik.http.routers.${COMPOSE_PROJECT_NAME}Wellknown.middlewares=${COMPOSE_PROJECT_NAME}Headers@docker,${COMPOSE_PROJECT_NAME}Redirectregex0@docker
-      - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}Headers.headers.stsSeconds=15552000
-      - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}Redirectregex0.redirectregex.regex=^(.*)/\.well-known/(?:card|cal)dav
-      - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}Redirectregex0.redirectregex.replacement=$${1}/remote.php/dav
-      - traefik.http.middlewares.${COMPOSE_PROJECT_NAME}Redirectregex0.redirectregex.permanent=true
+
+      - PHP_MEMORY_LIMIT=${NEXTCLOUD_PHP_MEMORY_LIMIT:-2G}
+      - PHP_UPLOAD_LIMIT=${NEXTCLOUD_PHP_UPLOAD_LIMIT:-2G}
+
+      - MYSQL_DATABASE=${MARIADB_DATABASE:-aio}
+      - MYSQL_USER=${MARIADB_USER:-${MARIADB_DATABASE:-aio}}
+      - MYSQL_PASSWORD=${MARIADB_PASSWORD:-}
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+              capabilities:
+                - gpu
     networks:
-      - default
-      - admin_default
-      - proxy
+      default:
+      internal:
 
-  go-vod:
-    image: radialapps/go-vod
-    restart: always
-    init: true
+  cron:
+    <<: *app
+    entrypoint: /cron.sh
     depends_on:
       - app
+
+  appapi-harp:
+    image: ghcr.io/nextcloud/nextcloud-appapi-harp:release
+    restart: always
     environment:
-      - NEXTCLOUD_HOST=${NEXTCLOUD_OVERWRITECLIURL:-${NEXTCLOUD_OVERWRITEPROTOCOL:-http}://${NEXTCLOUD_OVERWRITEHOST:-${NEXTCLOUD_DOMAIN:-${COMPOSE_PROJECT_NAME}.${DOMAIN:-localhost}}}}
-      - NVIDIA_VISIBLE_DEVICES=all
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+      - TZ=${TZ:-UTC}
+      - HP_TRUSTED_PROXY_IPS=169.254.1.254,169.254.3.254
+      - HP_SHARED_KEY=${NEXTCLOUD_HP_SHARED_KEY}
+      - NC_INSTANCE_URL=http://nextcloud:${TRAEFIK_WEB_PORT:-8080}
+    profiles:
+      - harp
     volumes:
       - type: tmpfs
-        target: /tmp:exec
-      - data:/var/www/html:ro
+        target: /tmp
+      - /var/run/docker.sock:/var/run/docker.sock
+      - certs:/certs
+    networks:
+      default:
+      proxy:
+      app:
+    links:
+      - caddy:nextcloud
+
+  caddy:
+    image: caddy
+    restart: always
+    volumes:
+      - ./caddy:/etc/caddy
+      - html:/var/www/html:ro
+      - caddy_data:/data/caddy
+
+    environment:
+      - HTTP_INGRES=http://nextcloud.${DOMAIN:-localhost}:${TRAEFIK_WEB_PORT:-8080}
+      - HTTPS_INGRES=https://nextcloud.${DOMAIN:-localhost}:${TRAEFIK_WEBSECURE_PORT:-8443}
+
+    labels:
+      - traefik.enable=true
+      - name=nextcloud
+      - traefik.http.services.caddy-${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=8080
+      - traefik.http.routers.caddy-${COMPOSE_PROJECT_NAME}.middlewares=caddy-${COMPOSE_PROJECT_NAME}-stsHeaders@docker
+      - traefik.http.middlewares.caddy-${COMPOSE_PROJECT_NAME}-stsHeaders.headers.stsSeconds=15552000
+      - traefik.http.middlewares.caddy-${COMPOSE_PROJECT_NAME}-stsHeaders.headers.frameDeny=true
+      - traefik.http.middlewares.caddy-${COMPOSE_PROJECT_NAME}-stsHeaders.headers.browserXssFilter=true
+      - traefik.http.middlewares.caddy-${COMPOSE_PROJECT_NAME}-stsHeaders.headers.stsIncludeSubdomains=true
+      - traefik.http.middlewares.caddy-${COMPOSE_PROJECT_NAME}-stsHeaders.headers.stsPreload=true
+      - traefik.http.middlewares.caddy-${COMPOSE_PROJECT_NAME}-stsHeaders.headers.forceSTSHeader=true
+    post_start:
+      - command: sleep 3
+    networks:
+      default:
+        ipv4_address: 169.254.3.254
+        aliases:
+          - nextcloud
+          - nextcloud.${DOMAIN:-localhost}
+      proxy:
+      app:
+        aliases:
+          - nextcloud
+          - nextcloud.${DOMAIN:-localhost}
 
 volumes:
+  html:
   data:
+  certs:
+  caddy_data:
 
 networks:
+  app:
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 169.254.2.0/24
+          ip_range: 169.254.2.0/24
+  default:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 169.254.3.0/24
+          ip_range: 169.254.3.0/24
+          gateway: 169.254.3.1
   proxy:
     external: true
-  admin_default:
+  internal:
     external: true

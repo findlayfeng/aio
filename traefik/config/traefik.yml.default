@@ -1,0 +1,26 @@
+providers:
+  docker:
+    network: proxy
+    exposedByDefault: false
+  file:
+    directory: /config
+    watch: true
+
+api:
+  dashboard: true
+  disabledashboardad: true
+
+entryPoints:
+  web:
+    address: "localhost:8080"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+  websecure:
+    asDefault: true
+    address: "localhost:8443"
+    http:
+      tls: {}
