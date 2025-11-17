@@ -1,5 +1,5 @@
 services:
-  db:
+  mariadb:
     image: mariadb:11.8
     command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
     restart: always
@@ -15,9 +15,18 @@ services:
     volumes:
       - db:/var/lib/mysql
 
+    networks:
+      default:
+        ipv4_address: 169.254.4.2
+        aliases:
+          - db
+
   redis:
     image: redis:alpine
     restart: always
+    networks:
+      default:
+        ipv4_address: 169.254.4.3
 
 volumes:
   db:
@@ -27,3 +36,8 @@ networks:
     internal: true
     driver: bridge
     name: internal
+    ipam:
+      driver: default
+      config:
+        - subnet: 169.254.4.0/24
+          ip_range: 169.254.4.0/24
