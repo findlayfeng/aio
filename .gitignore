@@ -1,4 +1,5 @@
 .env
+override.yml
 *.code-workspace
 !/*/**/.env
 /data/

@@ -17,7 +17,7 @@ services:
 
     networks:
       default:
-        ipv4_address: 169.254.4.2
+        ipv4_address: 169.254.4.128
         aliases:
           - db
 
@@ -26,7 +26,7 @@ services:
     restart: always
     networks:
       default:
-        ipv4_address: 169.254.4.3
+        ipv4_address: 169.254.4.129
 
 volumes:
   db:
@@ -40,4 +40,4 @@ networks:
       driver: default
       config:
         - subnet: 169.254.4.0/24
-          ip_range: 169.254.4.0/24
+          ip_range: 169.254.4.0/25

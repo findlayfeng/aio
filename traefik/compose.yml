@@ -30,10 +30,11 @@ services:
     networks:
       default:
       proxy:
-        ipv4_address: 169.254.1.254
+        ipv4_address: 169.254.1.128
 
     env_file:
-      - traefik.env
+      - path: traefik.env
+        required: false
 
 networks:
   proxy:
@@ -44,6 +45,6 @@ networks:
       driver: default
       config:
         - subnet: 169.254.1.0/24
-          ip_range: 169.254.1.0/24
+          ip_range: 169.254.1.0/25
 volumes:
   data:

@@ -2,8 +2,9 @@ services:
   app:
     build:
       context: ./images
-      args:
-        MIRROR: "https://mirrors.ustc.edu.cn"
+    extends:
+      file: ../override.yml
+      service: x-jellyfin
     restart: always
     volumes:
       - config:/config
@@ -17,20 +18,11 @@ services:
       - traefik.enable=true
       - name=jellyfin
       - traefik.http.services.app-${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=8096
-      # - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls.certresolver=zerossl
     networks:
       - proxy
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
     post_start:
       - command: chown -R 33:33 /config /cache
         user: root
-
 
 volumes:
   config:

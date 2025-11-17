@@ -18,7 +18,7 @@ services:
       - traefik.enable=true
     networks:
       default:
-        ipv4_address: 169.254.3.253
+        ipv4_address: 169.254.3.129
       proxy:
     volumes:
       - type: volume
@@ -33,12 +33,13 @@ services:
     depends_on:
       - caddy
 
-  app: &app
+  app:
     build:
       context: ./images
-      args:
-        MIRROR: "https://mirrors.ustc.edu.cn"
     restart: always
+    extends:
+      file: ../override.yml
+      service: x-nextcloud
     depends_on:
       - caddy
     volumes:
@@ -57,7 +58,7 @@ services:
     environment:
       - TZ=${TZ:-UTC}
 
-      - TRUSTED_PROXIES=169.254.1.254 169.254.3.254
+      - TRUSTED_PROXIES=169.254.1.128 169.254.3.128
       - OVERWRITEPROTOCOL=https
       - REDIS_HOST=redis
       - MYSQL_HOST=db
@@ -78,44 +79,38 @@ services:
       - MYSQL_DATABASE=${MARIADB_DATABASE:-aio}
       - MYSQL_USER=${MARIADB_USER:-${MARIADB_DATABASE:-aio}}
       - MYSQL_PASSWORD=${MARIADB_PASSWORD:-}
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              capabilities:
-                - gpu
+
     networks:
       default:
       internal:
 
   cron:
-    <<: *app
+    extends: app
     entrypoint: /cron.sh
     depends_on:
       - app
 
-  appapi-harp:
-    image: ghcr.io/nextcloud/nextcloud-appapi-harp:release
-    restart: always
-    environment:
-      - TZ=${TZ:-UTC}
-      - HP_TRUSTED_PROXY_IPS=169.254.1.254,169.254.3.254
-      - HP_SHARED_KEY=${NEXTCLOUD_HP_SHARED_KEY}
-      - NC_INSTANCE_URL=http://nextcloud:${TRAEFIK_WEB_PORT:-8080}
-    profiles:
-      - harp
-    volumes:
-      - type: tmpfs
-        target: /tmp
-      - /var/run/docker.sock:/var/run/docker.sock
-      - certs:/certs
-    networks:
-      default:
-      proxy:
-      app:
-    links:
-      - caddy:nextcloud
+  # appapi-harp:
+  #   image: ghcr.io/nextcloud/nextcloud-appapi-harp:release
+  #   restart: always
+  #   environment:
+  #     - TZ=${TZ:-UTC}
+  #     - HP_TRUSTED_PROXY_IPS=169.254.1.128,169.254.3.128
+  #     - HP_SHARED_KEY=${NEXTCLOUD_HP_SHARED_KEY}
+  #     - NC_INSTANCE_URL=http://nextcloud:${TRAEFIK_WEB_PORT:-8080}
+  #   profiles:
+  #     - harp
+  #   volumes:
+  #     - type: tmpfs
+  #       target: /tmp
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #     - certs:/certs
+  #   networks:
+  #     default:
+  #     proxy:
+  #     app:
+  #   links:
+  #     - caddy:nextcloud
 
   caddy:
     image: caddy
@@ -144,7 +139,7 @@ services:
       - command: sleep 3
     networks:
       default:
-        ipv4_address: 169.254.3.254
+        ipv4_address: 169.254.3.128
         aliases:
           - nextcloud
           - nextcloud.${DOMAIN:-localhost}
@@ -167,13 +162,13 @@ networks:
     ipam:
       config:
         - subnet: 169.254.2.0/24
-          ip_range: 169.254.2.0/24
+          ip_range: 169.254.2.0/25
   default:
     driver: bridge
     ipam:
       config:
         - subnet: 169.254.3.0/24
-          ip_range: 169.254.3.0/24
+          ip_range: 169.254.3.0/25
           gateway: 169.254.3.1
   proxy:
     external: true

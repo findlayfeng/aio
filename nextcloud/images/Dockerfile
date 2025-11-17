@@ -22,24 +22,28 @@ RUN [ -z "${DEBIAN_SECURITY_MIRROR}" ] || \
 RUN rm /etc/apt/apt.conf.d/docker-clean
 RUN --mount=type=cache,target=/var/cache/apt \
 	--mount=type=cache,target=/var/lib/apt/lists/ \
-	--mount=type=cache,target=/tmp \
+	--mount=type=tmpfs,target=/tmp \
+	--mount=type=cache,target=/download \
 	<<-EOF
 	set -ex
 	. /etc/os-release
-	[ -f /tmp/cuda-keyring_1.1-1_all.deb ] || curl -Lo /tmp/cuda-keyring_1.1-1_all.deb \
-		https://developer.download.nvidia.com/compute/cuda/repos/debian${VERSION_ID}/$(arch)/cuda-keyring_1.1-1_all.deb
-	apt-get install -y /tmp/cuda-keyring_1.1-1_all.deb
 
-	[ -f /tmp/jellyfin-ffmpeg7_7.1.2-4-bookworm_amd64.deb ] || curl -Lo /tmp/jellyfin-ffmpeg7_7.1.2-4-bookworm_amd64.deb \
-		https://github.com/jellyfin/jellyfin-ffmpeg/releases/download/v7.1.2-4/jellyfin-ffmpeg7_7.1.2-4-bookworm_amd64.deb
-	apt-get install -y /tmp/jellyfin-ffmpeg7_7.1.2-4-bookworm_amd64.deb
+	apt-get update
+	[ -f /download/cuda-keyring_1.1-1_all.deb ] || curl -Lo /download/cuda-keyring_1.1-1_all.deb \
+		https://developer.download.nvidia.com/compute/cuda/repos/debian${VERSION_ID}/$(arch)/cuda-keyring_1.1-1_all.deb
+	apt-get install -y /download/cuda-keyring_1.1-1_all.deb
+
+	architecture=$(dpkg --print-architecture)
+	[ -f /download/jellyfin-ffmpeg7_7.1.2-4-${VERSION_CODENAME}_${architecture}.deb ] || curl -Lo /download/jellyfin-ffmpeg7_7.1.2-4-${VERSION_CODENAME}_${architecture}.deb \
+		https://github.com/jellyfin/jellyfin-ffmpeg/releases/download/v7.1.2-4/jellyfin-ffmpeg7_7.1.2-4-${VERSION_CODENAME}_${architecture}.deb
+	apt-get install -y /download/jellyfin-ffmpeg7_7.1.2-4-${VERSION_CODENAME}_${architecture}.deb
 
 	ln -s /usr/lib/jellyfin-ffmpeg/ffmpeg /usr/local/bin/ffmpeg
     ln -s /usr/lib/jellyfin-ffmpeg/ffprobe /usr/local/bin/ffprobe
 
-	# [ -f /tmp/deb-multimedia-keyring_2024.9.1_all.deb ] || curl -Lo /tmp/deb-multimedia-keyring_2024.9.1_all.deb \
+	# [ -f /download/deb-multimedia-keyring_2024.9.1_all.deb ] || curl -Lo /download/deb-multimedia-keyring_2024.9.1_all.deb \
 	# 	${DEBIAN_MULTIMEDIA_MIRROR:-https://www.deb-multimedia.org}/pool/main/d/deb-multimedia-keyring/deb-multimedia-keyring_2024.9.1_all.deb
-	# apt-get install -y /tmp/deb-multimedia-keyring_2024.9.1_all.deb
+	# apt-get install -y /download/deb-multimedia-keyring_2024.9.1_all.deb
 	# cat <<EEOF > /etc/apt/sources.list.d/deb-multimedia.list
 	# # 默认注释了源码仓库，如有需要可自行取消注释
 	# deb ${DEBIAN_MULTIMEDIA_MIRROR:-https://www.deb-multimedia.org} ${VERSION_CODENAME} main non-free

@@ -1,0 +1,19 @@
+#!/bin/sh
+
+urandom_pass() {
+	head -n 10 /dev/urandom | sha256sum | cut -c 1-16
+}
+
+[ -f "override.yml" ] || cp override.yml.default override.yml
+[ -f ".env" ] || cat <<-EOF > .env
+	MARIADB_ROOT_PASSWORD=$(urandom_pass)
+	MARIADB_PASSWORD=$(urandom_pass)
+	NEXTCLOUD_ADMIN_PASSWORD=$(urandom_pass)
+	CODE_PASSWORD=$(urandom_pass)
+EOF
+
+servers:="commons traefik nextcloud qbt jellyfin gitlab-runner forgejo"
+
+for server in ${servers}; do
+	docker compose --project-directory ${server} --file ${server}/compose.yml $@
+done
