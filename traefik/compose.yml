@@ -1,5 +1,8 @@
 services:
   reverse-proxy:
+    extends:
+      file: ../override.yml
+      service: x-traefik
     image: traefik:v3
     restart: always
     volumes:
@@ -7,15 +10,13 @@ services:
       - ./routing_config:/routing_config
       - data:/data
       - /var/run/docker.sock:/var/run/docker.sock
-    ports:
-      - ${TRAEFIK_WEB_PORT:-8080}:${TRAEFIK_WEB_PORT:-8080}
-      - ${TRAEFIK_WEBSECURE_PORT:-8443}:${TRAEFIK_WEBSECURE_PORT:-8443}
     environment:
       - TZ=${TZ:-UTC}
       - TRAEFIK_PROVIDERS_DOCKER=true
       - TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT=false
       - TRAEFIK_ENTRYPOINTS_WEB_ADDRESS=:${TRAEFIK_WEB_PORT:-8080}
       - TRAEFIK_ENTRYPOINTS_WEBSECURE_ADDRESS=:${TRAEFIK_WEBSECURE_PORT:-8443}
+      - TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP3=true
       - TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS_ENTRYPOINT_TO=websecure
       - TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS_ENTRYPOINT_SCHEME=https
       - TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS_ENTRYPOINT_PERMANENT=true
@@ -27,10 +28,7 @@ services:
       - TRAEFIK_PROVIDERS_FILE_WATCH=true
       - TRAEFIK_PROVIDERS_DOCKER_DEFAULTRULE=Host(`{{ or (index .Labels "domain") (printf "%s.%s" (or (index .Labels "name") (index .Labels "com.docker.compose.service") .Name) "${DOMAIN:-localhost}")}}`)
 
-    networks:
-      default:
-      proxy:
-        ipv4_address: 169.254.1.128
+    network_mode: "host"
 
     env_file:
       - path: traefik.env
@@ -46,5 +44,6 @@ networks:
       config:
         - subnet: 169.254.1.0/24
           ip_range: 169.254.1.0/25
+          gateway: 169.254.1.1
 volumes:
   data:

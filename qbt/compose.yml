@@ -11,7 +11,7 @@ services:
     volumes:
       - config:/config/qBittorrent/config
       - data:/config/qBittorrent/data
-      - ${DATA_PATH:-../data}:/downloads
+      - ${DATA_PATH:-../data}/download:/downloads/download
     labels:
       - traefik.enable=true
       - traefik.http.services.qbt-service.loadbalancer.server.port=${QBT_WEBUI_PORT:-8080}
@@ -19,9 +19,10 @@ services:
       - ${QBT_LISTENPORT:-6881}:${QBT_LISTENPORT:-6881}
       - ${QBT_LISTENPORT:-6881}:${QBT_LISTENPORT:-6881}/udp
     networks:
+      - default
       - proxy
     post_start:
-      - command: chown -R 33:33 /config /downloads
+      - command: chown -R 33:33 /config /downloads/download
         user: root
 
 volumes:
@@ -29,5 +30,7 @@ volumes:
   data:
 
 networks:
+  default:
+    enable_ipv6: true
   proxy:
     external: true

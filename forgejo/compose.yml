@@ -1,13 +1,15 @@
 services:
   forgejo:
-    image: codeberg.org/forgejo/forgejo:9
+    image: codeberg.org/forgejo/forgejo:13
     environment:
       - USER_UID=33
       - USER_GID=33
     restart: always
     labels:
       - traefik.enable=true
+      - traefik.http.services.forgejo-${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=3000
     networks:
+      - default
       - internal
       - proxy
     volumes:

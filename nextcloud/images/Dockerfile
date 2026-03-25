@@ -1,4 +1,4 @@
-FROM nextcloud:31.0.7-fpm
+FROM nextcloud:32.0.2-fpm
 
 ARG MIRROR=
 ARG DEBIAN_MIRROR=${MIRROR:+${MIRROR}/debian}
@@ -59,11 +59,12 @@ RUN --mount=type=cache,target=/var/cache/apt \
 	set -ex; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
-		cuda-runtime-13-0 \
+		cuda-runtime-13-1 \
+		cuda-nvcc-13-1 \
 	;
 
-ADD --unpack=true https://github.com/nextcloud-releases/richdocuments/releases/download/v8.7.6/richdocuments-v8.7.6.tar.gz /usr/src/nextcloud/custom_apps/
-ADD --unpack=true https://github.com/pulsejet/memories/releases/download/v7.7.0/memories.tar.gz /usr/src/nextcloud/custom_apps/
+# ADD --unpack=true https://github.com/nextcloud-releases/richdocuments/releases/download/v8.7.7/richdocuments-v8.7.7.tar.gz /usr/src/nextcloud/custom_apps/
+# ADD --unpack=true https://github.com/pulsejet/memories/releases/download/v7.7.0/memories.tar.gz /usr/src/nextcloud/custom_apps/
 
 COPY hooks /docker-entrypoint-hooks.d
 COPY config/* /usr/src/nextcloud/config/

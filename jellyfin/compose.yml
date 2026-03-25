@@ -16,9 +16,20 @@ services:
       - TZ=${TZ:-UTC}
     labels:
       - traefik.enable=true
-      - name=jellyfin
+      - name=${COMPOSE_PROJECT_NAME}
       - traefik.http.services.app-${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=8096
+      - traefik.http.routers.app-${COMPOSE_PROJECT_NAME}.middlewares=app-${COMPOSE_PROJECT_NAME}-mw@docker
+      - traefik.http.middlewares.app-${COMPOSE_PROJECT_NAME}-mw.headers.STSSeconds=315360000
+      - traefik.http.middlewares.app-${COMPOSE_PROJECT_NAME}-mw.headers.STSIncludeSubdomains=true
+      - traefik.http.middlewares.app-${COMPOSE_PROJECT_NAME}-mw.headers.STSPreload=true
+      - traefik.http.middlewares.app-${COMPOSE_PROJECT_NAME}-mw.headers.forceSTSHeader=true
+      - traefik.http.middlewares.app-${COMPOSE_PROJECT_NAME}-mw.headers.frameDeny=true
+      - traefik.http.middlewares.app-${COMPOSE_PROJECT_NAME}-mw.headers.contentTypeNosniff=true
+      - traefik.http.middlewares.app-${COMPOSE_PROJECT_NAME}-mw.headers.customresponseheaders.X-XSS-PROTECTION=1
+      - traefik.http.middlewares.app-${COMPOSE_PROJECT_NAME}-mw.headers.customFrameOptionsValue='allow-from https://${COMPOSE_PROJECT_NAME}.${DOMAIN:-localhost}:${TRAEFIK_WEBSECURE_PORT:-8443}'
+      - traefik.http.middlewares.app-${COMPOSE_PROJECT_NAME}-mw.headers.customResponseHeaders.X-Robots-Tag=noindex,nofollow,nosnippet,noarchive,notranslate,noimageindex
     networks:
+      - default
       - proxy
     post_start:
       - command: chown -R 33:33 /config /cache
