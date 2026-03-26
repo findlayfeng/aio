@@ -1,4 +1,4 @@
-FROM nextcloud:32.0.2-fpm
+FROM nextcloud:32.0.6-fpm
 
 ARG MIRROR=
 ARG DEBIAN_MIRROR=${MIRROR:+${MIRROR}/debian}
