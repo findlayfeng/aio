@@ -12,7 +12,7 @@ urandom_pass() {
 	CODE_PASSWORD=$(urandom_pass)
 EOF
 
-servers:="commons traefik nextcloud qbt jellyfin gitlab-runner forgejo"
+servers=${servers:-"commons traefik nextcloud qbt jellyfin gitlab-runner forgejo"}
 
 for server in ${servers}; do
 	docker compose --project-directory ${server} --file ${server}/compose.yml $@
