@@ -58,7 +58,7 @@ services:
     environment:
       - TZ=${TZ:-UTC}
 
-      - TRUSTED_PROXIES=169.254.1.1 169.254.3.128
+      - TRUSTED_PROXIES=169.254.3.128 169.254.3.130
       - OVERWRITEPROTOCOL=https
       - REDIS_HOST=redis
       - MYSQL_HOST=db
@@ -118,6 +118,21 @@ services:
     post_start:
       - command: update-ca-certificates
         user: root
+
+  notify_push:
+    build:
+      context: https://github.com/nextcloud/notify_push.git#v1.3.1
+    restart: always
+    networks:
+      default:
+        ipv4_address: 169.254.3.130
+      internal:
+      proxy:
+    environment:
+      DATABASE_URL: mysql://${MARIADB_USER:-${MARIADB_DATABASE:-aio}}:${MARIADB_PASSWORD:-}@db/${MARIADB_DATABASE:-aio}
+      REDIS_URL: redis://redis
+      DATABASE_PREFIX: oc_
+      NEXTCLOUD_URL: http://nextcloud.${DOMAIN:-localhost}:${TRAEFIK_WEB_PORT:-8080}
 
   caddy:
     image: caddy

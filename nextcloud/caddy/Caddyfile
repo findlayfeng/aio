@@ -1,7 +1,7 @@
 {
     local_certs
 	servers {
-		trusted_proxies static 169.254.1.1/32
+		trusted_proxies static 169.254.1.1/32 169.254.3.130/32
 	}
 }
 
@@ -10,6 +10,8 @@
     redir @well-known /remote.php/dav/ 301
 
     reverse_proxy /exapps/* appapi-harp:8780
+    reverse_proxy /push/* notify_push:7867
+
     root * /var/www/html
 
     php_fastcgi app:9000
