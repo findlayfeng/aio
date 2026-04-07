@@ -6,6 +6,10 @@ services:
     environment:
       - TZ=${TZ:-UTC}
       - DOMAIN=https://vw.${DOMAIN:-localhost}:${TRAEFIK_WEBSECURE_PORT:-8443}
+      # https://github.com/dani-garcia/vaultwarden/wiki/Enabling-admin-page#secure-the-admin_token
+      - ADMIN_TOKEN=${VM_ADMIN_TOKEN}
+      - SIGNUPS_ALLOWED=false
+      - SIGNUPS_DOMAINS_WHITELIST=${VW_SIGNUPS_DOMAINS_WHITELIST:-${DOMAIN:-localhost}}
     volumes:
       - data:/data
     labels:
