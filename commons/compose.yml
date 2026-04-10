@@ -21,6 +21,23 @@ services:
         aliases:
           - db
 
+  pgsql:
+    image: postgres:17-alpine
+    restart: always
+    shm_size: 128mb
+    environment:
+      - TZ=${TZ:-UTC}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-aio}
+      - POSTGRES_USER=${POSTGRES_USER:-${POSTGRES_DB:-aio}}
+
+    volumes:
+      - pgsql_data:/var/lib/postgresql/data
+
+    networks:
+      default:
+        ipv4_address: 169.254.4.130
+
   redis:
     image: redis:alpine
     restart: always
@@ -29,6 +46,7 @@ services:
         ipv4_address: 169.254.4.129
 
 volumes:
+  pgsql_data:
   db:
 
 networks:
