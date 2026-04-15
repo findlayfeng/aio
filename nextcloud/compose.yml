@@ -46,6 +46,8 @@ services:
       - ./skeleton:/var/www/skeleton
       - html:/var/www/html
       - data:/var/www/data
+      - type: tmpfs
+        target: /tmp
       - type: volume
         source: caddy_data
         volume:
