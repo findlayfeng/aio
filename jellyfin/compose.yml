@@ -9,8 +9,9 @@ services:
     volumes:
       - config:/config
       - ${DATA_PATH:-../data}/download:/media/download:ro
-      - ${DATA_PATH:-../data}/tmp/jellyfin:/cache
       - ./fonts:/fonts:ro
+      - type: tmpfs
+        target: /cache
     user: 33:33
     environment:
       - TZ=${TZ:-UTC}
