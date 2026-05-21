@@ -1,4 +1,11 @@
 services:
+  volume-init:
+    image: alpine
+    restart: on-failure:3
+    command: mkdir -p /opt/scrutiny/influxdb /opt/scrutiny/config
+    volumes:
+      - scrutiny:/opt/scrutiny
+
   mariadb:
     image: mariadb:11.8
     command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
@@ -45,9 +52,40 @@ services:
       default:
         ipv4_address: 169.254.4.129
 
+  scrutiny:
+    extends:
+      file: ../override.yml
+      service: x-scrutiny
+    restart: always
+    depends_on:
+      - volume-init
+    image: ghcr.io/analogj/scrutiny:latest
+    cap_add:
+      - SYS_RAWIO
+      - SYS_ADMIN
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.scrutiny.loadbalancer.server.port=8080
+    volumes:
+      - /run/udev:/run/udev:ro
+      - type: volume
+        source: scrutiny
+        volume:
+          subpath: config
+        target: /opt/scrutiny/config
+      - type: volume
+        source: scrutiny
+        volume:
+          subpath: influxdb
+        target: /opt/scrutiny/influxdb
+    networks:
+      default:
+        ipv4_address: 169.254.4.131
+
 volumes:
   pgsql_data:
   db:
+  scrutiny:
 
 networks:
   default:
