@@ -1,6 +1,6 @@
 services:
   forgejo:
-    image: codeberg.org/forgejo/forgejo:13
+    image: codeberg.org/forgejo/forgejo:15
     environment:
       - USER_UID=33
       - USER_GID=33
