@@ -6,27 +6,23 @@ services:
     volumes:
       - scrutiny:/opt/scrutiny
 
-  mariadb:
-    image: mariadb:11.8
-    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+  mysql:
+    image: mysql:lts
     restart: always
     environment:
       - TZ=${TZ:-UTC}
-      - MARIADB_AUTO_UPGRADE=1
-      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD:-}
-      - MARIADB_RANDOM_ROOT_PASSWORD=${MARIADB_RANDOM_ROOT_PASSWORD:-}
-      - MARIADB_DATABASE=${MARIADB_DATABASE:-aio}
-      - MARIADB_USER=${MARIADB_USER:-${MARIADB_DATABASE:-aio}}
-      - MARIADB_PASSWORD=${MARIADB_PASSWORD:-}
-
-    volumes:
-      - db:/var/lib/mysql
-
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-}
+      - MYSQL_RANDOM_ROOT_PASSWORD=${MYSQL_RANDOM_ROOT_PASSWORD:-}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-aio}
+      - MYSQL_USER=${MYSQL_USER:-${MYSQL_DATABASE:-aio}}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-}
     networks:
       default:
         ipv4_address: 169.254.4.128
         aliases:
-          - db
+          - mysql
+    volumes:
+      - mysql_data:/var/lib/mysql
 
   pgsql:
     image: postgres:17-alpine
@@ -84,7 +80,7 @@ services:
 
 volumes:
   pgsql_data:
-  db:
+  mysql_data:
   scrutiny:
 
 networks:
