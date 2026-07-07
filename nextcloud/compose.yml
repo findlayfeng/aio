@@ -132,7 +132,7 @@ services:
       internal:
       proxy:
     environment:
-      DATABASE_URL: mysql://${MARIADB_USER:-${MARIADB_DATABASE:-aio}}:${MARIADB_PASSWORD:-}@db/${MARIADB_DATABASE:-aio}
+      DATABASE_URL: postgres://${POSTGRES_USER:-${POSTGRES_DB:-aio}}:${POSTGRES_PASSWORD:-}@pgsql/${POSTGRES_DB:-aio}
       REDIS_URL: redis://redis
       DATABASE_PREFIX: oc_
       NEXTCLOUD_URL: http://nextcloud.${DOMAIN:-localhost}:${TRAEFIK_WEB_PORT:-8080}
