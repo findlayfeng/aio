@@ -3,3 +3,4 @@ override.yml
 *.code-workspace
 !/*/**/.env
 /data/
+traefik/traefik.yml
