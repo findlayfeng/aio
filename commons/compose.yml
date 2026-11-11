@@ -27,7 +27,10 @@ services:
   pgsql:
     image: postgres:17-alpine
     restart: always
-    shm_size: 128mb
+    shm_size: 512mb
+    command:
+      - -c
+      - shared_buffers=256MB
     environment:
       - TZ=${TZ:-UTC}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
