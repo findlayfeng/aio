@@ -133,6 +133,7 @@ services:
     networks:
       default:
         ipv4_address: 169.254.3.131
+      internal:
 
   go-vod:
     image: radialapps/go-vod
