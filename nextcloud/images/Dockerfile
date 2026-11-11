@@ -14,7 +14,6 @@ ADD --unpack=true https://github.com/nextcloud-releases/notify_push/releases/dow
 ARG JELLYFIN_FFMPEG_VER=8.1.3-2
 ADD --unpack=true https://github.com/jellyfin/jellyfin-ffmpeg/releases/download/v${JELLYFIN_FFMPEG_VER}/jellyfin-ffmpeg_${JELLYFIN_FFMPEG_VER}_portable_linux64-gpl.tar.xz /rootfs/usr/local/bin/
 
-
 ARG PREVIEWGENERATOR_VER=5.15.0
 ADD --unpack=true https://github.com/nextcloud-releases/previewgenerator/releases/download/v${PREVIEWGENERATOR_VER}/previewgenerator-v${PREVIEWGENERATOR_VER}.tar.gz /rootfs/usr/src/nextcloud/custom_apps/
 
