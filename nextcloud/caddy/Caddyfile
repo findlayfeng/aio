@@ -9,7 +9,11 @@
     @well-known path_regexp ^/.well-known/(?:card|cal)dav$
     redir @well-known /remote.php/dav/ 301
 
-    reverse_proxy /exapps/* appapi-harp:8780
+    reverse_proxy /exapps/* appapi-harp:8780 {
+        transport http {
+            read_timeout 1800s
+        }
+    }
     reverse_proxy /push/* notify_push:7867
 
     root * /var/www/html
@@ -18,19 +22,18 @@
     file_server
 }
 
-
-nextcloud {
+http://{$COMPOSE_PROJECT_NAME}.{$DOMAIN}:{$HTTP_INGRES_PORT}  {
     import nextcloud
     header Strict-Transport-Security "max-age=15552000;includeSubDomains;preload"
 }
 
-{$HTTP_INGRES} {
-    import nextcloud
-}
-
-{$HTTPS_INGRES} {
+https://{$COMPOSE_PROJECT_NAME}.{$DOMAIN}:{$HTTPS_INGRES_PORT} {
     import nextcloud
     header Strict-Transport-Security "max-age=15552000;includeSubDomains;preload"
+}
+
+https://code.{$DOMAIN}:{$HTTPS_INGRES_PORT} {
+    reverse_proxy code:9980
 }
 
 # Refer to the Caddy docs for more information:

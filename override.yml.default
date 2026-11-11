@@ -18,3 +18,5 @@ services:
   x-traefik: {}
 
   x-scrutiny: {}
+
+  x-go-vod: {}
