@@ -3,7 +3,7 @@ x-base: &base
     context: ./images
     args:
       - NEXTCLOUD_VER=35.0.2
-      - RICHDOCUMENTS_VER=12.0.1
+      - RICHDOCUMENTS_VER=12.0.2
       - MEMORIES_VER=11.1.2
       - NOTIFY_PUSH_VER=1.4.2
       - JELLYFIN_FFMPEG_VER=8.1.3-2
